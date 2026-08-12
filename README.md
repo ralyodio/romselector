@@ -21,8 +21,8 @@ A single-file Python web app for browsing games inside a zip archive and exporti
 
 1. Clone or download this repo:
    ```bash
-   git clone https://github.com/yourname/RomSelector.git
-   cd RomSelector
+   git clone https://github.com/jonromero/romselector.git
+   cd romselector
    ```
 
 2. Place your zip file in the same folder as `rom_picker.py`, or note its path for step 3.
