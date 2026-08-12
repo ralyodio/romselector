@@ -2,7 +2,7 @@
 
 A single-file Python web app for browsing games inside a zip archive and exporting selected ones to a local folder. No dependencies — just Python 3.
 
-![RomSelector screenshot](https://user-images.githubusercontent.com/placeholder/screenshot.png)
+![Browsing, filtering, and selecting games](demo/browse-filter-select.gif)
 
 ## What it does
 
@@ -56,11 +56,13 @@ http://<server-ip>:8000
 
 ## How to use the UI
 
-1. **Browse** — use the platform tabs at the top to filter by system (NES, GBA, SNES, Neo Geo, ScummVM, etc.)
-2. **Search** — type in the search bar to filter by game name across all platforms
+1. **Browse** — use the platform tabs to filter by system (NES, GBA, SNES, Neo Geo, ScummVM, etc.)
+2. **Filter** — type in the **Filter visible games…** box next to the tabs to filter by name
 3. **Select** — click any game row to select it; selected games appear in the sidebar on the right with a running total size
 4. **Export** — click the **Export →** button; a log shows each file being written to `./output/<platform>/`
-5. **AI assistant** — click **Load AI model** in the bottom bar to load a local LLM (see below)
+5. **AI assistant** — load a local LLM and ask it to pick games for you in plain English (see below)
+
+![Exporting selected games](demo/export.gif)
 
 Exported files are organized by platform:
 ```
@@ -121,6 +123,8 @@ The AI search bar is disabled until you load the model — it only works once th
 2. Click **Load AI model** — this downloads Phi-3.5 mini (~2.4 GB) the first time and caches it locally, and unlocks the search bar
 3. Type a request in the search bar and press Enter or **Ask AI →**
 
+![Loading the AI model](demo/ai-loading.gif)
+
 > **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, filtering, export) works normally over plain HTTP either way — only the AI bar needs this. Safari's WebGPU support is experimental.
 
 **Example queries:**
@@ -131,6 +135,8 @@ The AI search bar is disabled until you load the model — it only works once th
 - `Sega classics`
 
 **Scope and speed:** the AI scans whichever platform tab is currently active — click a tab (e.g. **SNES**) before asking to keep it fast. Leaving **All** selected scans the entire library in batches, which can take several minutes on a large collection. You can still manually add or remove games afterwards.
+
+![Asking the AI to select all fighting games](demo/ai-select.gif)
 
 ## Contributing
 
