@@ -114,12 +114,14 @@ kill $(lsof -ti:8000)
 
 RomSelector includes an optional AI bar at the bottom of the page powered by [WebLLM](https://webllm.mlc.ai/). It runs **entirely in your browser** using WebGPU — no server, no API key, no data leaves your machine.
 
+There's one search bar, used for both — plain text live-filters the list as always; natural-language requests go through the AI once it's loaded.
+
 **Setup:**
 1. Open the app in a browser that supports WebGPU (Chrome 113+, Edge 113+)
 2. Click **Load AI model** — this downloads Phi-3.5 mini (~2.4 GB) the first time and caches it locally
-3. Type a natural language request and press Enter or **Ask →**
+3. Type a request in the search bar and press Enter or **Ask AI →**
 
-> **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, search, export) works normally over plain HTTP either way — only the AI bar needs this.
+> **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, search, export) works normally over plain HTTP either way — only the AI bar needs this. Safari's WebGPU support is experimental.
 
 **Example queries:**
 - `select all fighting games`
@@ -128,9 +130,7 @@ RomSelector includes an optional AI bar at the bottom of the page powered by [We
 - `show me co-op multiplayer games`
 - `Sega classics`
 
-The AI reads your full game list and returns a selection. You can still manually add or remove games afterwards.
-
-> **Note:** WebGPU is required. If your browser doesn't support it, the Load button will fail. Safari support is experimental.
+**Scope and speed:** the AI scans whichever platform tab is currently active — click a tab (e.g. **SNES**) before asking to keep it fast. Leaving **All** selected scans the entire library in batches, which can take several minutes on a large collection. You can still manually add or remove games afterwards.
 
 ## Contributing
 

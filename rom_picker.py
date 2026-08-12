@@ -395,10 +395,7 @@ HTML = r"""<!DOCTYPE html>
   #ai-load-btn:hover:not(:disabled) { background: #1e3a5f; }
   #ai-load-btn:disabled { opacity: .7; cursor: default; }
   #ai-load-btn.ready { border-color: #4ade80; color: #4ade80; }
-  #ai-input { flex: 1; padding: 7px 10px; border-radius: 6px; border: 1px solid #444;
-              background: #222; color: #eee; font-size: 13px; }
-  #ai-input::placeholder { color: #666; }
-  #ai-input:disabled { opacity: .5; }
+  #ai-hint { flex: 1; font-size: 12px; color: #555; }
   #ai-ask-btn { padding: 7px 16px; border-radius: 6px; border: none;
                 background: #3b82f6; color: #fff; font-size: 13px; font-weight: 600;
                 cursor: pointer; white-space: nowrap; }
@@ -410,7 +407,7 @@ HTML = r"""<!DOCTYPE html>
 
 <header>
   <h1>🎮 ROM Picker</h1>
-  <input id="search" type="search" placeholder="Search games…" autocomplete="off">
+  <input id="search" type="search" placeholder="Search games… or ask AI, e.g. &quot;select all fighting games&quot;" autocomplete="off">
   <span id="sel-count">0 selected</span>
   <span id="sel-size"></span>
   <button id="refresh-btn" title="Re-scan zip and rebuild cache">⟳ Refresh zip</button>
@@ -466,8 +463,8 @@ HTML = r"""<!DOCTYPE html>
 
 <footer id="ai-bar">
   <button id="ai-load-btn">🤖 Load AI model</button>
-  <input id="ai-input" type="text" placeholder="Ask AI to select games… (e.g. &quot;select all fighting games&quot;)" disabled autocomplete="off">
-  <button id="ai-ask-btn" disabled>Ask →</button>
+  <span id="ai-hint">Type a request in the search bar above (e.g. "select all fighting games"), then hit Ask AI</span>
+  <button id="ai-ask-btn" disabled>Ask AI →</button>
 </footer>
 
 <script>
@@ -794,9 +791,8 @@ async function loadAI() {
     });
     btn.textContent = '✓ AI model ready';
     btn.classList.add('ready');
-    $('ai-input').disabled  = false;
     $('ai-ask-btn').disabled = false;
-    showToast('AI model loaded — ask it to select games below.', '', 3000);
+    showToast('AI model loaded — type a request in the search bar, then hit Ask AI.', '', 4000);
   } catch (e) {
     showToast('Failed to load AI model: ' + e.message, 'error', 5000);
     btn.textContent = '🤖 Load AI model';
@@ -807,18 +803,21 @@ async function loadAI() {
 }
 
 async function askAI() {
-  const query = $('ai-input').value.trim();
+  const query = $('search').value.trim();
   if (!query || !aiEngine || aiAsking) return;
+
+  // Scope to the active platform tab — much faster than scanning every game.
+  const pool = activePlatform === 'ALL'
+    ? allGames
+    : allGames.filter(g => g.platform === activePlatform);
 
   aiAsking = true;
   const askBtn = $('ai-ask-btn');
-  const input  = $('ai-input');
   askBtn.disabled = true;
-  input.disabled  = true;
 
   const batches = [];
-  for (let i = 0; i < allGames.length; i += AI_BATCH_SIZE) {
-    batches.push(allGames.slice(i, i + AI_BATCH_SIZE));
+  for (let i = 0; i < pool.length; i += AI_BATCH_SIZE) {
+    batches.push(pool.slice(i, i + AI_BATCH_SIZE));
   }
 
   const matchedPaths = new Set();
@@ -857,13 +856,14 @@ async function askAI() {
       if (g && !selected.has(path)) selected.set(path, g);
     });
     updateSidebar();
-    render();
 
     askBtn.disabled    = false;
-    askBtn.textContent = 'Ask →';
-    input.disabled     = false;
-    input.value        = '';
+    askBtn.textContent = 'Ask AI →';
     aiAsking = false;
+
+    searchTerm = '';
+    $('search').value = '';
+    render();
 
     const msg = matchedPaths.size
       ? `AI selected ${matchedPaths.size} game(s)${errCount ? ` (${errCount} batch(es) failed)` : ''}`
@@ -874,7 +874,7 @@ async function askAI() {
 
 $('ai-load-btn').onclick = loadAI;
 $('ai-ask-btn').onclick  = askAI;
-$('ai-input').addEventListener('keydown', e => { if (e.key === 'Enter') askAI(); });
+$('search').addEventListener('keydown', e => { if (e.key === 'Enter' && aiEngine) askAI(); });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtSize(bytes) {
