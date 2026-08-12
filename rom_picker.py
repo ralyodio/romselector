@@ -516,7 +516,7 @@ HTML = r"""<!DOCTYPE html>
   </div>
 </div>
 
-<div id="credits">🕹️ Coded by Claude · check more stuff at <a href="https://jon.io" target="_blank" rel="noopener">jon.io</a> · <a href="https://buymeacoffee.com/jonromero" target="_blank" rel="noopener">buymeacoffee.com/jonromero</a></div>
+<div id="credits">☕ <a href="https://buymeacoffee.com/jonromero" target="_blank" rel="noopener">Buy me a coffee</a> if you liked this · check more stuff at <a href="https://jon.io" target="_blank" rel="noopener">jon.io</a></div>
 
 <script>
 
