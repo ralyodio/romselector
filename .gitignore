@@ -1,0 +1,11 @@
+.DS_Store
+._*
+.smbdelete*
+.rom_cache.json
+games.txt
+output/
+*.zip
+*.7z
+*.chd
+*.sfc
+*.m3u
