@@ -283,12 +283,7 @@ HTML = r"""<!DOCTYPE html>
   header { display: flex; align-items: center; gap: 12px; padding: 12px 16px;
            background: var(--panel); border-bottom: 3px solid var(--line); flex-shrink: 0; }
   header h1 { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: .01em;
-              white-space: nowrap; }
-  #search { flex: 1; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--line);
-            background: var(--panel); color: var(--ink); font-size: 14px; font-weight: 500;
-            box-shadow: var(--shadow-sm); }
-  #search::placeholder { color: #9a9484; }
-  #search:focus { outline: none; border-color: var(--blue); box-shadow: var(--shadow-sm); }
+              white-space: nowrap; margin-right: auto; }
   #export-btn { padding: 8px 20px; border-radius: 8px; border: 2px solid var(--line);
                 background: var(--red); color: #fff; font-size: 14px; font-weight: 800;
                 cursor: pointer; white-space: nowrap; box-shadow: var(--shadow-sm);
@@ -308,15 +303,21 @@ HTML = r"""<!DOCTYPE html>
   #refresh-btn:hover { background: var(--yellow); }
   #refresh-btn:disabled { opacity: 0.5; cursor: default; background: var(--panel); }
 
-  /* ── Platform tabs ── */
-  #tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px;
-          padding: 10px 16px; background: var(--bg); border-bottom: 2px solid var(--line);
-          flex-shrink: 0; scrollbar-width: thin; }
+  /* ── Platform tabs + filter ── */
+  #filter-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+                background: var(--bg); border-bottom: 2px solid var(--line); flex-shrink: 0; }
+  #tabs { flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px;
+          scrollbar-width: thin; }
   .tab { padding: 6px 14px; border-radius: 20px; border: 2px solid var(--line);
          background: var(--panel); color: var(--ink); font-size: 12px; font-weight: 700;
          cursor: pointer; white-space: nowrap; transition: transform .08s; }
   .tab:hover { transform: translateY(-1px); }
   .tab.active { background: var(--yellow); }
+  #filter { flex-shrink: 0; width: 200px; padding: 6px 10px; border-radius: 8px;
+            border: 2px solid var(--line); background: var(--panel); color: var(--ink);
+            font-size: 12px; font-weight: 600; }
+  #filter::placeholder { color: #9a9484; }
+  #filter:focus { outline: none; border-color: var(--blue); }
 
   /* ── Main layout ── */
   main { display: flex; flex: 1; overflow: hidden; }
@@ -387,7 +388,7 @@ HTML = r"""<!DOCTYPE html>
   #clear-btn:hover { background: var(--red); color: #fff; }
 
   /* ── Toast ── */
-  #toast { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%);
+  #toast { position: fixed; bottom: 46px; left: 50%; transform: translateX(-50%);
            background: var(--panel); border: 2px solid var(--line); color: var(--ink);
            padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600;
            box-shadow: var(--shadow); opacity: 0; transition: opacity .3s;
@@ -416,18 +417,24 @@ HTML = r"""<!DOCTYPE html>
 
   #empty { color: var(--muted); font-size: 14px; text-align: center; margin-top: 60px; }
 
-  /* ── AI bar ── */
-  #ai-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-            background: var(--blue); border-top: 3px solid var(--line); flex-shrink: 0; }
-  #ai-load-btn { padding: 7px 14px; border-radius: 8px; border: 2px solid var(--line);
+  /* ── AI search bar ── */
+  #ai-search-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+                    background: var(--blue); border-bottom: 3px solid var(--line);
+                    flex-shrink: 0; }
+  #ai-load-btn { padding: 8px 14px; border-radius: 8px; border: 2px solid var(--line);
                  background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 800;
                  cursor: pointer; white-space: nowrap; box-shadow: var(--shadow-sm); }
   #ai-load-btn:hover:not(:disabled) { transform: translate(-1px,-1px);
                                        box-shadow: 3px 3px 0 var(--line); }
   #ai-load-btn:disabled { opacity: .75; cursor: default; }
   #ai-load-btn.ready { background: var(--green); color: #fff; }
-  #ai-hint { flex: 1; font-size: 12px; color: #fff; font-weight: 600; opacity: .9; }
-  #ai-ask-btn { padding: 7px 16px; border-radius: 8px; border: 2px solid var(--line);
+  #search { flex: 1; padding: 9px 12px; border-radius: 8px; border: 2px solid var(--line);
+            background: var(--panel); color: var(--ink); font-size: 14px; font-weight: 500;
+            box-shadow: var(--shadow-sm); }
+  #search::placeholder { color: #7a7a7a; }
+  #search:focus { outline: none; border-color: var(--yellow); }
+  #search:disabled { opacity: .55; cursor: not-allowed; background: #e4eaff; box-shadow: none; }
+  #ai-ask-btn { padding: 9px 16px; border-radius: 8px; border: 2px solid var(--line);
                 background: var(--yellow); color: var(--ink); font-size: 13px; font-weight: 800;
                 cursor: pointer; white-space: nowrap; box-shadow: var(--shadow-sm); }
   #ai-ask-btn:hover:not(:disabled) { transform: translate(-1px,-1px);
@@ -447,14 +454,22 @@ HTML = r"""<!DOCTYPE html>
 
 <header>
   <h1>🕹️ ROM PICKER</h1>
-  <input id="search" type="search" placeholder="Search games… or ask AI, e.g. &quot;select all fighting games&quot;" autocomplete="off">
   <span id="sel-count">0 selected</span>
   <span id="sel-size"></span>
   <button id="refresh-btn" title="Re-scan zip and rebuild cache">⟳ Refresh zip</button>
   <button id="export-btn" disabled>Export →</button>
 </header>
 
-<div id="tabs"></div>
+<div id="ai-search-bar">
+  <button id="ai-load-btn">🤖 Load AI model</button>
+  <input id="search" type="search" placeholder="Load the AI model to ask it something, e.g. &quot;select all fighting games&quot;" autocomplete="off" disabled>
+  <button id="ai-ask-btn" disabled>Ask AI →</button>
+</div>
+
+<div id="filter-row">
+  <div id="tabs"></div>
+  <input id="filter" type="search" placeholder="Filter visible games…" autocomplete="off">
+</div>
 
 <main>
   <div id="list-wrap">
@@ -500,12 +515,6 @@ HTML = r"""<!DOCTYPE html>
     <button id="modal-close">Close</button>
   </div>
 </div>
-
-<footer id="ai-bar">
-  <button id="ai-load-btn">🤖 Load AI model</button>
-  <span id="ai-hint">Type a request in the search bar above (e.g. "select all fighting games"), then hit Ask AI</span>
-  <button id="ai-ask-btn" disabled>Ask AI →</button>
-</footer>
 
 <div id="credits">🕹️ Coded by Claude · check more stuff at <a href="https://jon.io" target="_blank" rel="noopener">jon.io</a></div>
 
@@ -718,8 +727,8 @@ $('refresh-btn').onclick = async () => {
   }
 };
 
-// ── Search ─────────────────────────────────────────────────────────────────
-$('search').addEventListener('input', e => {
+// ── Filter ─────────────────────────────────────────────────────────────────
+$('filter').addEventListener('input', e => {
   searchTerm = e.target.value;
   render();
 });
@@ -834,6 +843,7 @@ async function loadAI() {
     });
     btn.textContent = '✓ AI model ready';
     btn.classList.add('ready');
+    $('search').disabled     = false;
     $('ai-ask-btn').disabled = false;
     showToast('AI model loaded — type a request in the search bar, then hit Ask AI.', '', 4000);
   } catch (e) {
@@ -856,7 +866,9 @@ async function askAI() {
 
   aiAsking = true;
   const askBtn = $('ai-ask-btn');
+  const input  = $('search');
   askBtn.disabled = true;
+  input.disabled  = true;
 
   const batches = [];
   for (let i = 0; i < pool.length; i += AI_BATCH_SIZE) {
@@ -902,11 +914,9 @@ async function askAI() {
 
     askBtn.disabled    = false;
     askBtn.textContent = 'Ask AI →';
+    input.disabled     = false;
+    input.value        = '';
     aiAsking = false;
-
-    searchTerm = '';
-    $('search').value = '';
-    render();
 
     const msg = matchedPaths.size
       ? `AI selected ${matchedPaths.size} game(s)${errCount ? ` (${errCount} batch(es) failed)` : ''}`

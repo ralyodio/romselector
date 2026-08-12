@@ -112,16 +112,16 @@ kill $(lsof -ti:8000)
 
 ## AI assistant (local, no API key)
 
-RomSelector includes an optional AI bar at the bottom of the page powered by [WebLLM](https://webllm.mlc.ai/). It runs **entirely in your browser** using WebGPU — no server, no API key, no data leaves your machine.
+RomSelector includes an optional AI search bar right below the header, powered by [WebLLM](https://webllm.mlc.ai/). It runs **entirely in your browser** using WebGPU — no server, no API key, no data leaves your machine.
 
-There's one search bar, used for both — plain text live-filters the list as always; natural-language requests go through the AI once it's loaded.
+The AI search bar is disabled until you load the model — it only works once the AI is enabled. Plain text filtering lives separately, in the small **Filter visible games…** box next to the platform tabs.
 
 **Setup:**
 1. Open the app in a browser that supports WebGPU (Chrome 113+, Edge 113+)
-2. Click **Load AI model** — this downloads Phi-3.5 mini (~2.4 GB) the first time and caches it locally
+2. Click **Load AI model** — this downloads Phi-3.5 mini (~2.4 GB) the first time and caches it locally, and unlocks the search bar
 3. Type a request in the search bar and press Enter or **Ask AI →**
 
-> **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, search, export) works normally over plain HTTP either way — only the AI bar needs this. Safari's WebGPU support is experimental.
+> **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, filtering, export) works normally over plain HTTP either way — only the AI bar needs this. Safari's WebGPU support is experimental.
 
 **Example queries:**
 - `select all fighting games`
