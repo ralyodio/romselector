@@ -385,6 +385,25 @@ HTML = r"""<!DOCTYPE html>
   #modal-close:hover { background: #222; }
 
   #empty { color: #555; font-size: 14px; text-align: center; margin-top: 60px; }
+
+  /* ── AI bar ── */
+  #ai-bar { display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+            background: #161616; border-top: 1px solid #2a2a2a; flex-shrink: 0; }
+  #ai-load-btn { padding: 7px 14px; border-radius: 6px; border: 1px solid #3b82f6;
+                 background: transparent; color: #93c5fd; font-size: 13px; font-weight: 600;
+                 cursor: pointer; white-space: nowrap; }
+  #ai-load-btn:hover:not(:disabled) { background: #1e3a5f; }
+  #ai-load-btn:disabled { opacity: .7; cursor: default; }
+  #ai-load-btn.ready { border-color: #4ade80; color: #4ade80; }
+  #ai-input { flex: 1; padding: 7px 10px; border-radius: 6px; border: 1px solid #444;
+              background: #222; color: #eee; font-size: 13px; }
+  #ai-input::placeholder { color: #666; }
+  #ai-input:disabled { opacity: .5; }
+  #ai-ask-btn { padding: 7px 16px; border-radius: 6px; border: none;
+                background: #3b82f6; color: #fff; font-size: 13px; font-weight: 600;
+                cursor: pointer; white-space: nowrap; }
+  #ai-ask-btn:hover:not(:disabled) { background: #2563eb; }
+  #ai-ask-btn:disabled { background: #333; color: #666; cursor: default; }
 </style>
 </head>
 <body>
@@ -444,6 +463,12 @@ HTML = r"""<!DOCTYPE html>
     <button id="modal-close">Close</button>
   </div>
 </div>
+
+<footer id="ai-bar">
+  <button id="ai-load-btn">🤖 Load AI model</button>
+  <input id="ai-input" type="text" placeholder="Ask AI to select games… (e.g. &quot;select all fighting games&quot;)" disabled autocomplete="off">
+  <button id="ai-ask-btn" disabled>Ask →</button>
+</footer>
 
 <script>
 
@@ -733,6 +758,114 @@ function showToast(msg, type = '', duration = 3000) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.className = '', duration);
 }
+
+// ── AI assistant (local, WebLLM) ──────────────────────────────────────────
+let aiEngine  = null;
+let aiLoading = false;
+let aiAsking  = false;
+const AI_MODEL      = 'Phi-3.5-mini-instruct-q4f16_1-MLC';
+const AI_BATCH_SIZE = 200; // games per model call, keeps prompts within context window
+
+async function loadAI() {
+  if (aiEngine || aiLoading) return;
+  if (!navigator.gpu) {
+    showToast('WebGPU not supported in this browser. Try Chrome 113+ or Edge 113+.', 'error', 5000);
+    return;
+  }
+  aiLoading = true;
+  const btn = $('ai-load-btn');
+  btn.disabled = true;
+  btn.textContent = 'Loading engine…';
+  try {
+    const webllm = await import('https://esm.run/@mlc-ai/web-llm');
+    aiEngine = await webllm.CreateMLCEngine(AI_MODEL, {
+      initProgressCallback: (p) => {
+        btn.textContent = p.text || `Loading… ${Math.round((p.progress || 0) * 100)}%`;
+      },
+    });
+    btn.textContent = '✓ AI model ready';
+    btn.classList.add('ready');
+    $('ai-input').disabled  = false;
+    $('ai-ask-btn').disabled = false;
+    showToast('AI model loaded — ask it to select games below.', '', 3000);
+  } catch (e) {
+    showToast('Failed to load AI model: ' + e.message, 'error', 5000);
+    btn.textContent = '🤖 Load AI model';
+    btn.disabled = false;
+  } finally {
+    aiLoading = false;
+  }
+}
+
+async function askAI() {
+  const query = $('ai-input').value.trim();
+  if (!query || !aiEngine || aiAsking) return;
+
+  aiAsking = true;
+  const askBtn = $('ai-ask-btn');
+  const input  = $('ai-input');
+  askBtn.disabled = true;
+  input.disabled  = true;
+
+  const batches = [];
+  for (let i = 0; i < allGames.length; i += AI_BATCH_SIZE) {
+    batches.push(allGames.slice(i, i + AI_BATCH_SIZE));
+  }
+
+  const matchedPaths = new Set();
+  let errCount = 0;
+
+  try {
+    for (let bi = 0; bi < batches.length; bi++) {
+      askBtn.textContent = `Thinking… (${bi + 1}/${batches.length})`;
+      const batch    = batches[bi];
+      const listText = batch.map(g => `${g.name} [${g.platform}]`).join('\n');
+      const messages = [
+        { role: 'system', content:
+          'You select video games from a list based on a user request. ' +
+          'You are given a list of "Game Name [PLATFORM]" lines, one per game, and a request. ' +
+          'Reply with ONLY a JSON array of the exact game names (without the platform tag) from ' +
+          'THIS list that match the request. If none match, reply with []. ' +
+          'No explanation, no markdown — just the JSON array.' },
+        { role: 'user', content: `Request: ${query}\n\nGames:\n${listText}` },
+      ];
+      try {
+        const reply = await aiEngine.chat.completions.create({ messages, temperature: 0.2 });
+        const text  = reply.choices[0].message.content.trim();
+        const m     = text.match(/\[[\s\S]*\]/);
+        const names = m ? JSON.parse(m[0]) : [];
+        names.forEach(n => {
+          const hit = batch.find(g => g.name === n);
+          if (hit) matchedPaths.add(hit.path);
+        });
+      } catch (e) {
+        errCount++;
+      }
+    }
+  } finally {
+    matchedPaths.forEach(path => {
+      const g = allGames.find(x => x.path === path);
+      if (g && !selected.has(path)) selected.set(path, g);
+    });
+    updateSidebar();
+    render();
+
+    askBtn.disabled    = false;
+    askBtn.textContent = 'Ask →';
+    input.disabled     = false;
+    input.value        = '';
+    aiAsking = false;
+
+    const msg = matchedPaths.size
+      ? `AI selected ${matchedPaths.size} game(s)${errCount ? ` (${errCount} batch(es) failed)` : ''}`
+      : `AI found no matches${errCount ? ` (${errCount} batch(es) failed)` : ''}`;
+    showToast(msg, matchedPaths.size ? '' : 'error', 4000);
+  }
+}
+
+$('ai-load-btn').onclick = loadAI;
+$('ai-ask-btn').onclick  = askAI;
+$('ai-input').addEventListener('keydown', e => { if (e.key === 'Enter') askAI(); });
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtSize(bytes) {
