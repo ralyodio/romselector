@@ -516,7 +516,7 @@ HTML = r"""<!DOCTYPE html>
   </div>
 </div>
 
-<div id="credits">🕹️ Coded by Claude · check more stuff at <a href="https://jon.io" target="_blank" rel="noopener">jon.io</a></div>
+<div id="credits">🕹️ Coded by Claude · check more stuff at <a href="https://jon.io" target="_blank" rel="noopener">jon.io</a> · <a href="https://buymeacoffee.com/jonromero" target="_blank" rel="noopener">buymeacoffee.com/jonromero</a></div>
 
 <script>
 
@@ -855,20 +855,60 @@ async function loadAI() {
   }
 }
 
+// Ask the model which platforms are even relevant before scanning any games —
+// e.g. "best Nintendo games" only needs to look at NES/SNES/GB/GBA, not Arcade or DOS.
+async function narrowPlatforms(query) {
+  const counts = {};
+  allGames.forEach(g => { counts[g.platform] = (counts[g.platform] || 0) + 1; });
+  const codes    = Object.keys(counts);
+  const listText = codes.map(c => `${c} — ${PLAT[c] || c} (${counts[c]} games)`).join('\n');
+  const messages = [
+    { role: 'system', content:
+      'You map a video game request to relevant gaming platform categories. ' +
+      'You are given a list of platform codes with labels and game counts, one per line. ' +
+      'Reply with ONLY a JSON array of the platform codes (not labels) whose games could be ' +
+      'relevant to the request, e.g. ["SFC","NES"]. Only use codes from the list. If the ' +
+      'request is not platform-specific and could match games on any platform, reply with []. ' +
+      'No explanation, no markdown — just the JSON array.' },
+    { role: 'user', content: `Request: ${query}\n\nPlatforms:\n${listText}` },
+  ];
+  try {
+    const reply = await aiEngine.chat.completions.create({ messages, temperature: 0.2 });
+    const text  = reply.choices[0].message.content.trim();
+    const m     = text.match(/\[[\s\S]*\]/);
+    const names = m ? JSON.parse(m[0]) : [];
+    return names.filter(c => codes.includes(c));
+  } catch (e) {
+    return [];
+  }
+}
+
 async function askAI() {
   const query = $('search').value.trim();
   if (!query || !aiEngine || aiAsking) return;
-
-  // Scope to the active platform tab — much faster than scanning every game.
-  const pool = activePlatform === 'ALL'
-    ? allGames
-    : allGames.filter(g => g.platform === activePlatform);
 
   aiAsking = true;
   const askBtn = $('ai-ask-btn');
   const input  = $('search');
   askBtn.disabled = true;
   input.disabled  = true;
+
+  // Scope to the active platform tab. On "All", ask the AI which platforms are
+  // even relevant first — much faster than scanning every game on every request.
+  let pool;
+  let narrowedTo = null;
+  if (activePlatform === 'ALL') {
+    askBtn.textContent = 'Checking categories…';
+    const relevant = await narrowPlatforms(query);
+    if (relevant.length) {
+      narrowedTo = relevant;
+      pool = allGames.filter(g => relevant.includes(g.platform));
+    } else {
+      pool = allGames;
+    }
+  } else {
+    pool = allGames.filter(g => g.platform === activePlatform);
+  }
 
   const batches = [];
   for (let i = 0; i < pool.length; i += AI_BATCH_SIZE) {
@@ -918,9 +958,12 @@ async function askAI() {
     input.value        = '';
     aiAsking = false;
 
+    const scopeNote = narrowedTo
+      ? ` (checked ${narrowedTo.map(c => PLAT[c] || c).join(', ')})`
+      : '';
     const msg = matchedPaths.size
-      ? `AI selected ${matchedPaths.size} game(s)${errCount ? ` (${errCount} batch(es) failed)` : ''}`
-      : `AI found no matches${errCount ? ` (${errCount} batch(es) failed)` : ''}`;
+      ? `AI selected ${matchedPaths.size} game(s)${scopeNote}${errCount ? ` (${errCount} batch(es) failed)` : ''}`
+      : `AI found no matches${scopeNote}${errCount ? ` (${errCount} batch(es) failed)` : ''}`;
     showToast(msg, matchedPaths.size ? '' : 'error', 4000);
   }
 }
