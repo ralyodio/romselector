@@ -768,6 +768,15 @@ const AI_BATCH_SIZE = 200; // games per model call, keeps prompts within context
 
 async function loadAI() {
   if (aiEngine || aiLoading) return;
+  if (!window.isSecureContext) {
+    showToast(
+      'WebGPU needs a secure context. Plain http:// to a LAN IP doesn\'t qualify.\n' +
+      'Open this page via http://localhost:PORT on this machine, or on Chrome add this ' +
+      'origin to chrome://flags/#unsafely-treat-insecure-origin-as-secure and relaunch.',
+      'error', 8000
+    );
+    return;
+  }
   if (!navigator.gpu) {
     showToast('WebGPU not supported in this browser. Try Chrome 113+ or Edge 113+.', 'error', 5000);
     return;

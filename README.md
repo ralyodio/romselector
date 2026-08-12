@@ -119,6 +119,8 @@ RomSelector includes an optional AI bar at the bottom of the page powered by [We
 2. Click **Load AI model** — this downloads Phi-3.5 mini (~2.4 GB) the first time and caches it locally
 3. Type a natural language request and press Enter or **Ask →**
 
+> **Note:** WebGPU requires a "secure context" — `https://`, or `http://` on `localhost`/`127.0.0.1`. If you access RomSelector from another device over the LAN (`http://192.168.x.x:8000`, per the [home server setup](#running-on-a-home-server-eg-raspberry-pi-nas) above), Chrome will report WebGPU as unsupported even though it works fine locally. To use the AI bar over the LAN in Chrome, add the exact origin (e.g. `http://192.168.1.50:8000`) to `chrome://flags/#unsafely-treat-insecure-origin-as-secure` and relaunch the browser. The rest of the app (browsing, search, export) works normally over plain HTTP either way — only the AI bar needs this.
+
 **Example queries:**
 - `select all fighting games`
 - `best games from Nintendo`
